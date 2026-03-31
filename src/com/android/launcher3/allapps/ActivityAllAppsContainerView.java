@@ -1457,6 +1457,10 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
             if ("2".equals(searchPlacement) && !isSearchBarFloating()) {
                 int extraMargin = getResources().getDimensionPixelSize(R.dimen.all_apps_search_bar_bottom_padding_extra);
                 int bottomPaddingArea = Math.max(insets.bottom, mNavBarScrimHeight);
+                if (getRootWindowInsets() != null) {
+                    bottomPaddingArea = Math.max(bottomPaddingArea,
+                            getRootWindowInsets().getInsets(WindowInsets.Type.ime()).bottom);
+                }
                 if (bottomPaddingArea == 0) {
                     bottomPaddingArea = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 32, getResources().getDisplayMetrics());
                 }
@@ -1487,6 +1491,26 @@ public class ActivityAllAppsContainerView<T extends Context & ActivityContext>
     public WindowInsets dispatchApplyWindowInsets(WindowInsets insets) {
         mNavBarScrimHeight = computeNavBarScrimHeight(insets);
         applyAdapterSideAndBottomPaddings(mActivityContext.getDeviceProfile());
+        
+        if (mSearchContainer != null && mSearchContainer.getLayoutParams() instanceof MarginLayoutParams) {
+            MarginLayoutParams searchLp = (MarginLayoutParams) mSearchContainer.getLayoutParams();
+            String searchPlacement = LauncherPrefs.ALL_APPS_SEARCH_PLACEMENT.get(getContext());
+            if ("2".equals(searchPlacement) && !isSearchBarFloating()) {
+                int extraMargin = getResources().getDimensionPixelSize(R.dimen.all_apps_search_bar_bottom_padding_extra);
+                int bottomPaddingArea = Math.max(insets.getInsets(WindowInsets.Type.systemBars()).bottom, mNavBarScrimHeight);
+                bottomPaddingArea = Math.max(bottomPaddingArea, insets.getInsets(WindowInsets.Type.ime()).bottom);
+                
+                if (bottomPaddingArea == 0) {
+                    bottomPaddingArea = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 32, getResources().getDisplayMetrics());
+                }
+                int targetBottomMargin = bottomPaddingArea + extraMargin + (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24, getResources().getDisplayMetrics());
+                if (searchLp.bottomMargin != targetBottomMargin) {
+                    searchLp.bottomMargin = targetBottomMargin;
+                    mSearchContainer.setLayoutParams(searchLp);
+                }
+            }
+        }
+        
         return super.dispatchApplyWindowInsets(insets);
     }
 
